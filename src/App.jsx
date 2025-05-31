@@ -1,9 +1,10 @@
-import LandingPage from "./components/pages/LandingPage/LandingPage";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
 
 import MainPage from "./components/layout/MainPage";
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -37,10 +38,13 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <BrowserRouter>
-        <MainPage />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <MainPage />
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
+
 export default App;
