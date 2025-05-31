@@ -5,7 +5,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { Provider } from "react-redux";
 
 import MainPage from "./components/layout/MainPage";
-import store from "./redux/store";
+import { store } from "./redux";
 
 const theme = createTheme({
   palette: {
