@@ -11,53 +11,75 @@ import {
   IconButton,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import { useAuth } from "../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { register, clearError } from "../../redux";
 
 const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [validationError, setValidationError] = useState("");
 
-  const { signup, isLoading } = useAuth();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
 
   const handleClose = () => {
     setName("");
     setEmail("");
     setPassword("");
     setConfirmPassword("");
-    setError("");
+    setValidationError("");
+    dispatch(clearError());
     onClose();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setValidationError("");
+    dispatch(clearError());
 
+    // Client-side validation
     if (!name || !email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
+      setValidationError("Please fill in all fields");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setValidationError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setValidationError("Password must be at least 6 characters");
       return;
     }
 
-    const result = await signup(email, password, name);
+    try {
+      // Split name into firstName and lastName for backend
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(" ") || "";
 
-    if (result.success) {
-      handleClose();
-    } else {
-      setError(result.error);
+      // Dispatch register action and wait for result
+      await dispatch(
+        register({
+          email,
+          password,
+          firstName,
+          lastName,
+        })
+      ).unwrap();
+
+      handleClose(); // Close modal on success
+    } catch (error) {
+      // Error is automatically stored in Redux state
+      console.error("Signup failed:", error);
     }
   };
+
+  // Show validation error or Redux error
+  const displayError = validationError || error;
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -89,9 +111,9 @@ const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
             Create your account to get started.
           </Typography>
 
-          {error && (
+          {displayError && (
             <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
+              {displayError}
             </Alert>
           )}
 
@@ -102,6 +124,7 @@ const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
             onChange={(e) => setName(e.target.value)}
             sx={{ mb: 3 }}
             required
+            placeholder="Enter your full name"
           />
 
           <TextField
@@ -146,7 +169,7 @@ const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
             type="submit"
             fullWidth
             variant="contained"
-            disabled={isLoading}
+            disabled={loading}
             sx={{
               mb: 3,
               py: 1.5,
@@ -154,7 +177,7 @@ const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
               "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
             }}
           >
-            {isLoading ? "Creating Account..." : "Create Account"}
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
 
           <Box sx={{ textAlign: "center" }}>

@@ -11,37 +11,39 @@ import {
   IconButton,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import { useAuth } from "../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { login, clearError } from "../../redux";
 
 const LoginModal = ({ open, onClose, onSwitchToSignup }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  const { login, isLoading } = useAuth();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
 
   const handleClose = () => {
     setEmail("");
     setPassword("");
-    setError("");
+    dispatch(clearError()); // Clear any Redux errors
     onClose();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    dispatch(clearError());
 
     if (!email || !password) {
-      setError("Please fill in all fields");
+      // You could set a local error here or dispatch a custom error action
       return;
     }
 
-    const result = await login(email, password);
-
-    if (result.success) {
-      handleClose();
-    } else {
-      setError(result.error);
+    try {
+      // Dispatch login action and wait for result
+      await dispatch(login({ email, password })).unwrap();
+      handleClose(); // Close modal on success
+    } catch (error) {
+      // Error is automatically stored in Redux state
+      console.error("Login failed:", error);
     }
   };
 
@@ -106,7 +108,7 @@ const LoginModal = ({ open, onClose, onSwitchToSignup }) => {
             type="submit"
             fullWidth
             variant="contained"
-            disabled={isLoading}
+            disabled={loading}
             sx={{
               mb: 3,
               py: 1.5,
@@ -114,12 +116,12 @@ const LoginModal = ({ open, onClose, onSwitchToSignup }) => {
               "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
             }}
           >
-            {isLoading ? "Signing In..." : "Sign In"}
+            {loading ? "Signing In..." : "Sign In"}
           </Button>
 
           <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
-              Don't have an account?
+              Don't have an account?{" "}
               <Button
                 variant="text"
                 onClick={() => {

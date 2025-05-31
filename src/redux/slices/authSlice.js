@@ -1,31 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
-
-// Helper
-const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem("token");
-
-  const config = {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    ...options,
-  };
-
-  const response = await fetch(`${API_BASE_URL}/auth${endpoint}`, config);
-
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Network error" }));
-    throw new Error(error.message || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-};
+import { apiCall } from "./apiUtils";
 
 //  thunks
 
@@ -35,7 +9,7 @@ export const register = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       // Your backend expects: email, password, firstName, lastName
-      const result = await apiCall("/register", {
+      const result = await apiCall("/auth/register", {
         method: "POST",
         body: JSON.stringify(userData),
       });
@@ -56,7 +30,7 @@ export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const result = await apiCall("/login", {
+      const result = await apiCall("/auth/login", {
         method: "POST",
         body: JSON.stringify(credentials),
       });
@@ -77,7 +51,7 @@ export const getProfile = createAsyncThunk(
   "auth/getProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const result = await apiCall("/profile");
+      const result = await apiCall("/auth/profile");
       return result;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -90,7 +64,7 @@ export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async (profileData, { rejectWithValue }) => {
     try {
-      const result = await apiCall("/profile", {
+      const result = await apiCall("/auth/profile", {
         method: "PUT",
         body: JSON.stringify(profileData),
       });
@@ -107,7 +81,7 @@ export const changePassword = createAsyncThunk(
   async ({ oldPassword, newPassword }, { rejectWithValue }) => {
     try {
       // Your backend expects: { oldPassword, newPassword }
-      const result = await apiCall("/change-password", {
+      const result = await apiCall("/auth/change-password", {
         method: "PUT",
         body: JSON.stringify({ oldPassword, newPassword }),
       });
@@ -123,7 +97,7 @@ export const logout = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      const result = await apiCall("/logout", {
+      const result = await apiCall("/auth/logout", {
         method: "POST",
       });
       localStorage.removeItem("token");
@@ -189,7 +163,9 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload.user;
+        // console.log(state.user);
         state.token = action.payload.token;
+        // console.log(state.token);
         state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {

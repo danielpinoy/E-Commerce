@@ -12,38 +12,64 @@ import {
   IconButton,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import { useAuth } from "../../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { updateProfile, clearError } from "../../../redux";
 
 const EditProfileModal = ({ open, onClose }) => {
-  const { user, updateProfile, isLoading } = useAuth();
+  const dispatch = useDispatch();
+  const { user, loading, error } = useSelector((state) => state.auth);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Load user data when modal opens
   useEffect(() => {
     if (open && user) {
-      setName(user.name || "");
+      const fullName =
+        user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.name || "";
+      setName(fullName);
       setEmail(user.email || "");
-      setError("");
+      setLocalError("");
       setSuccess("");
+      dispatch(clearError());
     }
-  }, [open, user]);
+  }, [open, user, dispatch]);
+
+  // Debug: Log user data
+  useEffect(() => {
+    console.log("User from Redux:", user);
+  }, [user]);
 
   const handleSave = async () => {
-    setError("");
+    setLocalError("");
     setSuccess("");
+    dispatch(clearError());
 
     // Simple validation
     if (!name || !email) {
-      setError("Please fill in all fields");
+      setLocalError("Please fill in all fields");
       return;
     }
 
     try {
-      await updateProfile({ name, email });
+      // Split name into firstName and lastName
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Dispatch updateProfile action
+      await dispatch(
+        updateProfile({
+          firstName,
+          lastName,
+          email,
+        })
+      ).unwrap();
+
       setSuccess("Profile updated successfully!");
 
       // Close modal after 2 seconds
@@ -51,9 +77,13 @@ const EditProfileModal = ({ open, onClose }) => {
         onClose();
       }, 2000);
     } catch (error) {
-      setError("Failed to update profile. Please try again.");
+      setLocalError("Failed to update profile. Please try again.");
+      console.error("Update profile error:", error);
     }
   };
+
+  // Show local error or Redux error
+  const displayError = localError || error;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -77,9 +107,9 @@ const EditProfileModal = ({ open, onClose }) => {
       </DialogTitle>
 
       <DialogContent sx={{ px: 4 }}>
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
 
@@ -96,6 +126,7 @@ const EditProfileModal = ({ open, onClose }) => {
           onChange={(e) => setName(e.target.value)}
           sx={{ mb: 3 }}
           required
+          placeholder="Enter your full name"
         />
 
         <TextField
@@ -106,6 +137,7 @@ const EditProfileModal = ({ open, onClose }) => {
           onChange={(e) => setEmail(e.target.value)}
           sx={{ mb: 3 }}
           required
+          placeholder="Enter your email address"
         />
       </DialogContent>
 
@@ -116,13 +148,13 @@ const EditProfileModal = ({ open, onClose }) => {
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={isLoading}
+          disabled={loading}
           sx={{
             backgroundColor: "black",
             "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
           }}
         >
-          {isLoading ? "Saving..." : "Save Changes"}
+          {loading ? "Saving..." : "Save Changes"}
         </Button>
       </DialogActions>
     </Dialog>

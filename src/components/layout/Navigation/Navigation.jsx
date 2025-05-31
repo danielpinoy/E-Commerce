@@ -32,20 +32,23 @@ import LoginModal from "../../auth/LoginModal";
 import SignupModal from "../../auth/SignupModal";
 import EditProfileModal from "../../auth/profile/EditProfileModal";
 import DeleteAccountModal from "../../auth/profile/DeleteAccountModal";
-import { useAuth } from "../../../hooks/useAuth";
-
+// import { useAuth } from "../../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../../redux/slices/authSlice";
 const Navigation = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+
+  // store
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Separate modal states
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
-
-  const { user, isAuthenticated, logout } = useAuth();
 
   const menuItems = ["Women", "Men", "Shoes", "About", "Everworld"];
 
@@ -76,7 +79,7 @@ const Navigation = () => {
   };
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     handleMenuClose();
   };
 

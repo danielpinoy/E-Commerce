@@ -1,7 +1,7 @@
 // redux/slices/apiUtils.js
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 /**
  * API call with authentication
