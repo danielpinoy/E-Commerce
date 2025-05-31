@@ -2,8 +2,10 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import { Provider } from "react-redux";
 
 import MainPage from "./components/layout/MainPage";
+import store from "./redux/store";
 
 const theme = createTheme({
   palette: {
@@ -36,14 +38,16 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <BrowserRouter>
-          <MainPage />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <BrowserRouter>
+            <MainPage />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </Provider>
   );
 }
 

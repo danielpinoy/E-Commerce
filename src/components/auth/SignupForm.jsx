@@ -17,8 +17,10 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 import { useAuth } from "../../hooks/useAuth";
-
+import { useSelector, useDispatch } from "react-redux";
+import { register, clearError } from "../../redux/slices/authSlice";
 const SignupForm = ({ onSwitchToLogin, onClose }) => {
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
