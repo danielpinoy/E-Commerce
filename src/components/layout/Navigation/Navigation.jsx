@@ -1,3 +1,4 @@
+// src/components/layout/Navigation/Navigation.jsx
 import React, { useState } from "react";
 import {
   AppBar,
@@ -27,7 +28,8 @@ import {
   Delete,
 } from "@mui/icons-material";
 import SearchBar from "../../Common/UI/SearchBar";
-import AuthModal from "../../auth/AuthModal";
+import LoginModal from "../../auth/LoginModal";
+import SignupModal from "../../auth/SignupModal";
 import EditProfileModal from "../../auth/profile/EditProfileModal";
 import DeleteAccountModal from "../../auth/profile/DeleteAccountModal";
 import { useAuth } from "../../../hooks/useAuth";
@@ -36,14 +38,15 @@ const Navigation = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
-  const [editProfileOpen, setEditProfileOpen] = useState(false); // 🆕 Edit profile state
-  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false); // 🆕 Delete account state
+
+  // Separate modal states
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [signupModalOpen, setSignupModalOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Navigation items
   const menuItems = ["Women", "Men", "Shoes", "About", "Everworld"];
 
   const handleMenuOpen = (event) => {
@@ -63,15 +66,13 @@ const Navigation = () => {
     console.log("Searching for:", value);
   };
 
-  // Auth handlers
+  //  auth handlers
   const handleLoginClick = () => {
-    setAuthMode("login");
-    setAuthModalOpen(true);
+    setLoginModalOpen(true);
   };
 
   const handleSignupClick = () => {
-    setAuthMode("signup");
-    setAuthModalOpen(true);
+    setSignupModalOpen(true);
   };
 
   const handleLogout = () => {
@@ -79,7 +80,6 @@ const Navigation = () => {
     handleMenuClose();
   };
 
-  //  Profile handlers
   const handleEditProfile = () => {
     setEditProfileOpen(true);
     handleMenuClose();
@@ -98,6 +98,17 @@ const Navigation = () => {
   const handleWishlistClick = () => {
     console.log("Navigate to wishlist");
     handleMenuClose();
+  };
+
+  //  modal switching
+  const switchToSignup = () => {
+    setLoginModalOpen(false);
+    setSignupModalOpen(true);
+  };
+
+  const switchToLogin = () => {
+    setSignupModalOpen(false);
+    setLoginModalOpen(true);
   };
 
   return (
@@ -174,7 +185,6 @@ const Navigation = () => {
               />
             </Box>
 
-            {/* Search Icon - Mobile only */}
             <IconButton
               color="inherit"
               sx={{ display: { xs: "block", sm: "none" } }}
@@ -184,20 +194,16 @@ const Navigation = () => {
 
             {/* Account Section */}
             {isAuthenticated ? (
-              // Logged in user menu
-              <>
-                <IconButton color="inherit" onClick={handleMenuOpen}>
-                  <Avatar
-                    src={user?.avatar}
-                    alt={user?.name}
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    {user?.name?.charAt(0)}
-                  </Avatar>
-                </IconButton>
-              </>
+              <IconButton color="inherit" onClick={handleMenuOpen}>
+                <Avatar
+                  src={user?.avatar}
+                  alt={user?.name}
+                  sx={{ width: 32, height: 32 }}
+                >
+                  {user?.name?.charAt(0)}
+                </Avatar>
+              </IconButton>
             ) : (
-              // Guest user buttons
               <>
                 <Button
                   color="inherit"
@@ -219,7 +225,6 @@ const Navigation = () => {
               </>
             )}
 
-            {/* Cart Icon with Badge */}
             <IconButton color="inherit">
               <Badge badgeContent={2} color="error" variant="dot">
                 <ShoppingBagIcon />
@@ -227,7 +232,7 @@ const Navigation = () => {
             </IconButton>
           </Box>
 
-          {/*  Updated User Menu with Profile Options */}
+          {/* User Menu */}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -240,18 +245,9 @@ const Navigation = () => {
               vertical: "top",
               horizontal: "right",
             }}
-            PaperProps={{
-              sx: {
-                mt: 1,
-                minWidth: 220,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                border: "1px solid #e0e0e0",
-              },
-            }}
           >
             {isAuthenticated
-              ? // Logged in user menu items
-                [
+              ? [
                   <Box key="user-info" sx={{ px: 2, py: 1.5 }}>
                     <Typography variant="subtitle2" fontWeight="bold">
                       {user?.name}
@@ -295,8 +291,7 @@ const Navigation = () => {
                     <ListItemText>Sign Out</ListItemText>
                   </MenuItem>,
                 ]
-              : // Guest user menu items
-                [
+              : [
                   <MenuItem key="login" onClick={handleLoginClick}>
                     <ListItemIcon>
                       <AccountCircle fontSize="small" />
@@ -342,20 +337,24 @@ const Navigation = () => {
         )}
       </AppBar>
 
-      {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        initialMode={authMode}
+      {/* Separate Modals*/}
+      <LoginModal
+        open={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onSwitchToSignup={switchToSignup}
       />
 
-      {/*  Edit Profile Modal */}
+      <SignupModal
+        open={signupModalOpen}
+        onClose={() => setSignupModalOpen(false)}
+        onSwitchToLogin={switchToLogin}
+      />
+
       <EditProfileModal
         open={editProfileOpen}
         onClose={() => setEditProfileOpen(false)}
       />
 
-      {/*  Delete Account Modal */}
       <DeleteAccountModal
         open={deleteAccountOpen}
         onClose={() => setDeleteAccountOpen(false)}
