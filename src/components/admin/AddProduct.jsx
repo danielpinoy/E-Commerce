@@ -19,9 +19,13 @@ import {
 } from "@mui/material";
 import { Add, Save, ArrowBack, Preview } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { addProduct, clearError } from "../../redux/slices/productSlice";
 
 const AddProduct = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.products);
 
   const [product, setProduct] = useState({
     name: "",
@@ -36,9 +40,7 @@ const AddProduct = () => {
     tags: "",
   });
 
-  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
   const [newColor, setNewColor] = useState("");
   const [newSize, setNewSize] = useState("");
 
@@ -107,9 +109,8 @@ const AddProduct = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    setError("");
     setSuccess("");
+    dispatch(clearError());
 
     try {
       // Prepare product data
@@ -126,48 +127,31 @@ const AddProduct = () => {
           .filter((tag) => tag),
       };
 
-      // Get auth token from localStorage
-      const token = localStorage.getItem("token");
+      // Dispatch addProduct thunk
+      const result = await dispatch(addProduct(productData)).unwrap();
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify(productData),
+      setSuccess(
+        `Product "${product.name}" added successfully! ID: ${
+          result.item?.id || result.id || "N/A"
+        }`
+      );
+
+      // Reset form
+      setProduct({
+        name: "",
+        description: "",
+        price: "",
+        originalPrice: "",
+        category: "",
+        stock: "",
+        imageUrl: "",
+        colors: [],
+        sizes: [],
+        tags: "",
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        setSuccess(
-          `Product "${product.name}" added successfully! ID: ${
-            result.id || "N/A"
-          }`
-        );
-
-        // Reset form
-        setProduct({
-          name: "",
-          description: "",
-          price: "",
-          originalPrice: "",
-          category: "",
-          stock: "",
-          imageUrl: "",
-          colors: [],
-          sizes: [],
-          tags: "",
-        });
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to add product");
-      }
     } catch (err) {
-      setError(`Failed to add product: ${err.message}`);
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
+      // Error is handled by Redux, but we can log it
+      console.error("Error adding product:", err);
     }
   };
 
@@ -185,7 +169,7 @@ const AddProduct = () => {
       tags: "",
     });
     setSuccess("");
-    setError("");
+    dispatch(clearError());
   };
 
   return (
