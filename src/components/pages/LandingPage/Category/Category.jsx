@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllProducts } from "../../../../redux/slices/productSlice";
 import {
   SectionContainer,
   CategoryCard,
@@ -8,54 +10,114 @@ import {
 } from "./Category.theme";
 
 const Category = () => {
-  // example data
-  const categories = [
-    {
-      id: 1,
-      name: "SHIRTS",
-      image:
-        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      description: "Classic and contemporary styles",
-      slug: "shirts",
-    },
-    {
-      id: 2,
-      name: "JEANS",
-      image:
-        "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      description: "Sustainable denim essentials",
-      slug: "jeans",
-    },
-    {
-      id: 3,
-      name: "TEES",
-      image:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      description: "Everyday comfort basics",
-      slug: "tees",
-    },
-    {
-      id: 4,
-      name: "DENIM",
-      image:
-        "https://images.unsplash.com/photo-1582418702059-97ebafb35d09?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      description: "Premium denim collection",
-      slug: "denim",
-    },
-    {
-      id: 5,
-      name: "SWEATERS",
-      image:
-        "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      description: "Cozy knits for every season",
-      slug: "sweaters",
-    },
-  ];
+  const dispatch = useDispatch();
+  const { products, loading, error } = useSelector((state) => state.products);
+
+  // Fetch products when component mounts
+  useEffect(() => {
+    dispatch(getAllProducts());
+  }, [dispatch]);
+
+  // Placeholder images for different categories
+  const categoryImages = {
+    shirts:
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    jeans:
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    tees: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    denim:
+      "https://images.unsplash.com/photo-1582418702059-97ebafb35d09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    sweaters:
+      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    shoes:
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    accessories:
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    default:
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+  };
+
+  // Get unique categories from products
+  const getCategories = () => {
+    if (!products || products.length === 0) return [];
+
+    // Group products by category and count them
+    const categoryMap = products.reduce((acc, product) => {
+      const category = product.category?.toLowerCase() || "other";
+
+      if (!acc[category]) {
+        acc[category] = {
+          name: product.category || "Other",
+          count: 0,
+          products: [],
+        };
+      }
+
+      acc[category].count++;
+      acc[category].products.push(product);
+      return acc;
+    }, {});
+
+    // Convert to array and add images
+    return Object.entries(categoryMap).map(([key, value]) => ({
+      id: key,
+      name: value.name.toUpperCase(),
+      slug: key,
+      count: value.count,
+      products: value.products,
+      image: categoryImages[key] || categoryImages.default,
+      description: `${value.count} item${
+        value.count !== 1 ? "s" : ""
+      } available`,
+    }));
+  };
+
+  const categories = getCategories();
 
   const handleCategoryClick = (category) => {
-    // Navigate to category page
+    // Navigate to category page or filter products
     console.log("Navigate to category:", category.slug);
+    console.log("Products in this category:", category.products);
+    // You can dispatch a filter action or navigate to a category page here
   };
+
+  if (loading) {
+    return (
+      <SectionContainer>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6">Loading categories...</Typography>
+          </Box>
+        </Container>
+      </SectionContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <SectionContainer>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6" color="error">
+              Error loading categories: {error}
+            </Typography>
+          </Box>
+        </Container>
+      </SectionContainer>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <SectionContainer>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <Typography variant="h6">No categories available</Typography>
+          </Box>
+        </Container>
+      </SectionContainer>
+    );
+  }
 
   return (
     <SectionContainer>
@@ -94,7 +156,7 @@ const Category = () => {
         {/* Category Grid */}
         <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {categories.map((category) => (
-            <Grid sm={4} md={4} key={category.id}>
+            <Grid item xs={12} sm={6} md={4} key={category.id}>
               <CategoryCard onClick={() => handleCategoryClick(category)}>
                 <CategoryImage image={category.image} title={category.name} />
 
@@ -118,6 +180,7 @@ const Category = () => {
                       color: "text.secondary",
                       fontSize: { xs: "0.75rem", sm: "0.875rem" },
                       display: { xs: "none", sm: "block" },
+                      mb: 1,
                     }}
                   >
                     {category.description}
@@ -138,7 +201,7 @@ const Category = () => {
                       display: { xs: "none", sm: "inline-flex" },
                     }}
                   >
-                    Shop Now
+                    Shop Now ({category.count})
                   </Button>
                 </CategoryContent>
               </CategoryCard>

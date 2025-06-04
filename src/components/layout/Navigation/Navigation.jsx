@@ -35,7 +35,9 @@ import DeleteAccountModal from "../../auth/profile/DeleteAccountModal";
 // import { useAuth } from "../../../hooks/useAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../../redux/slices/authSlice";
+import { useNavigate } from "react-router-dom";
 const Navigation = () => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -143,6 +145,7 @@ const Navigation = () => {
             <Typography
               variant="h6"
               component="div"
+              onClick={() => navigate("/")}
               sx={{
                 fontWeight: "bold",
                 letterSpacing: "0.1em",
@@ -153,7 +156,14 @@ const Navigation = () => {
               EVERLANE
             </Typography>
           </Box>
-
+          {import.meta.env.VITE_SHOW_ADMIN === "true" && (
+            <Button
+              onClick={() => navigate("/add-product")}
+              sx={{ color: "red", textTransform: "none" }}
+            >
+              [DEV] Add Product
+            </Button>
+          )}
           <Box
             sx={{
               display: { xs: "none", md: "flex" },
