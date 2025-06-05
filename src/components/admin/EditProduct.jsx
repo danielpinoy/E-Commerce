@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Paper,
@@ -16,16 +16,24 @@ import {
   CardMedia,
   Chip,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
-import { Add, Save, ArrowBack, Preview } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { Edit, Save, ArrowBack, Preview } from "@mui/icons-material";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addProduct, clearError } from "../../redux/slices/productSlice";
+import {
+  getProductById,
+  updateProduct,
+  clearError,
+} from "../../redux/slices/productSlice";
 
-const AddProduct = () => {
+const EditProduct = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.products);
+  const { currentProduct, loading, error } = useSelector(
+    (state) => state.products
+  );
 
   const [product, setProduct] = useState({
     name: "",
@@ -65,6 +73,33 @@ const AddProduct = () => {
     "Brown",
     "Sage",
   ];
+
+  // Load product data when component mounts
+  useEffect(() => {
+    if (id) {
+      dispatch(getProductById(id));
+    }
+  }, [dispatch, id]);
+
+  // Populate form when product data is loaded
+  useEffect(() => {
+    if (currentProduct) {
+      setProduct({
+        name: currentProduct.name || "",
+        description: currentProduct.description || "",
+        price: currentProduct.price?.toString() || "",
+        originalPrice: currentProduct.originalPrice?.toString() || "",
+        category: currentProduct.category || "",
+        stock: currentProduct.stock?.toString() || "",
+        imageUrl: currentProduct.imageUrl || "",
+        colors: currentProduct.colors || [],
+        sizes: currentProduct.sizes || [],
+        tags: Array.isArray(currentProduct.tags)
+          ? currentProduct.tags.join(", ")
+          : currentProduct.tags || "",
+      });
+    }
+  }, [currentProduct]);
 
   const handleChange = (field) => (event) => {
     setProduct({
@@ -121,55 +156,52 @@ const AddProduct = () => {
           ? parseFloat(product.originalPrice)
           : null,
         stock: parseInt(product.stock),
-        storeId: 1,
-        tags: product.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter((tag) => tag),
+        storeId: currentProduct.storeId || 1,
+        tags:
+          typeof product.tags === "string"
+            ? product.tags
+            : product.tags.join(", "), // Convert array to string
       };
 
-      const result = await dispatch(addProduct(productData)).unwrap();
-      setSuccess(
-        `Product "${product.name}" added successfully! ID: ${
-          result.item?.id || result.id || "N/A"
-        }`
-      );
+      // Dispatch updateProduct thunk
+      await dispatch(updateProduct({ productId: id, productData })).unwrap();
 
-      // Reset form
-      setProduct({
-        name: "",
-        description: "",
-        price: "",
-        originalPrice: "",
-        category: "",
-        stock: "",
-        imageUrl: "",
-        colors: [],
-        sizes: [],
-        tags: "",
-      });
+      setSuccess(`Product "${product.name}" updated successfully!`);
+
+      // Navigate back to admin after 2 seconds
+      setTimeout(() => {
+        navigate("/admin");
+      }, 2000);
     } catch (err) {
-      // Error is handled by Redux, but we can log it
-      console.error("Error adding product:", err);
+      console.error("Error updating product:", err);
     }
   };
 
-  const clearForm = () => {
-    setProduct({
-      name: "",
-      description: "",
-      price: "",
-      originalPrice: "",
-      category: "",
-      stock: "",
-      imageUrl: "",
-      colors: [],
-      sizes: [],
-      tags: "",
-    });
-    setSuccess("");
-    dispatch(clearError());
+  const handleCancel = () => {
+    navigate("/admin");
   };
+
+  if (loading && !currentProduct) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
+        <CircularProgress />
+        <Typography sx={{ mt: 2 }}>Loading product...</Typography>
+      </Container>
+    );
+  }
+
+  if (error && !currentProduct) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Alert severity="error">
+          Error loading product: {error}
+          <Button onClick={() => navigate("/admin")} sx={{ ml: 2 }}>
+            Back to Admin
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -182,14 +214,19 @@ const AddProduct = () => {
               <IconButton onClick={() => navigate("/admin")} sx={{ mr: 2 }}>
                 <ArrowBack />
               </IconButton>
-              <Add sx={{ mr: 2, fontSize: 32 }} />
-              <Typography
-                variant="h4"
-                component="h1"
-                sx={{ fontWeight: "bold" }}
-              >
-                Add New Product
-              </Typography>
+              <Edit sx={{ mr: 2, fontSize: 32 }} />
+              <Box>
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  sx={{ fontWeight: "bold" }}
+                >
+                  Edit Product
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  ID: {id}
+                </Typography>
+              </Box>
             </Box>
 
             {/* Success/Error Messages */}
@@ -445,15 +482,15 @@ const AddProduct = () => {
                         py: 1.5,
                       }}
                     >
-                      {loading ? "Adding Product..." : "Add Product"}
+                      {loading ? "Updating..." : "Update Product"}
                     </Button>
 
                     <Button
                       type="button"
                       variant="outlined"
-                      onClick={clearForm}
+                      onClick={handleCancel}
                     >
-                      Clear Form
+                      Cancel
                     </Button>
                   </Box>
                 </Grid>
@@ -570,7 +607,7 @@ const AddProduct = () => {
                 color="text.secondary"
                 sx={{ textAlign: "center", py: 4 }}
               >
-                Fill out the form to see a preview of your product
+                Loading product data...
               </Typography>
             )}
           </Paper>
@@ -580,4 +617,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default EditProduct;

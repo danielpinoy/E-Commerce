@@ -157,11 +157,8 @@ const Navigation = () => {
             </Typography>
           </Box>
           {import.meta.env.VITE_SHOW_ADMIN === "true" && (
-            <Button
-              onClick={() => navigate("/add-product")}
-              sx={{ color: "red", textTransform: "none" }}
-            >
-              [DEV] Add Product
+            <Button onClick={() => navigate("/admin")}>
+              [DEV] Admin Panel
             </Button>
           )}
           <Box
