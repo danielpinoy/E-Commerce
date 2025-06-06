@@ -61,6 +61,20 @@ const SignupModal = ({ open, onClose, onSwitchToLogin }) => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(" ") || "";
 
+      // DEBUG: Check the splitting
+      console.log("Original name:", name);
+      console.log("Name parts:", nameParts);
+      console.log("firstName:", firstName);
+      console.log("lastName:", lastName);
+      const userData = {
+        email,
+        password,
+        firstName,
+        lastName,
+      };
+
+      // DEBUG: Log what you're sending
+      console.log("Sending to backend:", userData);
       // Dispatch register action and wait for result
       await dispatch(
         register({

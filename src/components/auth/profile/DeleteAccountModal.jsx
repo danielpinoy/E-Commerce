@@ -13,24 +13,33 @@ import {
   Box,
 } from "@mui/material";
 import { Close, Warning } from "@mui/icons-material";
-import { useAuth } from "../../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import { clearAuth } from "../../../redux/slices/authSlice";
+import { deleteUser } from "../../../redux/slices/userSlice";
 
 const DeleteAccountModal = ({ open, onClose }) => {
-  const { user, deleteAccount, isLoading } = useAuth();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.users);
 
   const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleClose = () => {
     setPassword("");
     setConfirmText("");
     setError("");
+    setSuccess("");
+    setIsDeleting(false);
     onClose();
   };
 
   const handleDelete = async () => {
     setError("");
+    setSuccess("");
 
     // Simple validation
     if (!password) {
@@ -44,10 +53,28 @@ const DeleteAccountModal = ({ open, onClose }) => {
     }
 
     try {
-      await deleteAccount(password);
-      handleClose(); // This will also log out the user
+      setIsDeleting(true);
+
+      // Delete user account via API
+      await dispatch(deleteUser(user.id)).unwrap();
+
+      // Show success message
+      setSuccess("Account deleted successfully! Logging you out...");
+
+      // Wait 2 seconds to show success message
+      setTimeout(() => {
+        // Clear auth state (logout)
+        dispatch(clearAuth());
+
+        // Close modal
+        handleClose();
+
+        // Optional: Redirect to home or show message
+        console.log("User logged out after account deletion");
+      }, 2000);
     } catch (error) {
-      setError("Failed to delete account. Please try again.");
+      setError(error || "Failed to delete account. Please try again.");
+      setIsDeleting(false);
     }
   };
 
@@ -79,6 +106,12 @@ const DeleteAccountModal = ({ open, onClose }) => {
       </DialogTitle>
 
       <DialogContent sx={{ px: 4 }}>
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -133,9 +166,9 @@ const DeleteAccountModal = ({ open, onClose }) => {
           onClick={handleDelete}
           variant="contained"
           color="error"
-          disabled={isLoading || !password || confirmText !== "DELETE"}
+          disabled={isDeleting || !password || confirmText !== "DELETE"}
         >
-          {isLoading ? "Deleting..." : "Delete My Account"}
+          {isDeleting ? "Deleting Account..." : "Delete My Account"}
         </Button>
       </DialogActions>
     </Dialog>
